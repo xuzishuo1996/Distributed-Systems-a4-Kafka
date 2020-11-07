@@ -46,20 +46,22 @@ public class A4Application {
         // ... = builder.stream(classroomTopic);
         // ...
         // ...to(outputTopic);
-//        KStream<String, Integer> classroomStream = builder.stream(classroomTopic);
-//        classroomStream.to(outputTopic, Produced.with(Serdes.String(), Serdes.Integer()));
-        KStream<String, String> source = builder.stream(classroomTopic);
-        source
-                .flatMapValues(line -> Arrays.asList(line.toLowerCase().split("\\W+")))
-                .groupBy((key, word) -> word)
-                //.windowedBy(TimeWindows.of(TimeUnit.SECONDS.toMillis(10)))
-                .count()
-                //.filter((word, count) -> (count % 2 == 1))
-                .toStream()
-                // convert windowed key to ordinary key
-                //.map((key, value) -> KeyValue.pair(key.key(), value))
-                //.map((word, count) -> (count == null ? KeyValue.pair(word, -1L) : KeyValue.pair(word, count)))
-                .to(outputTopic, Produced.with(Serdes.String(), Serdes.Long()));
+        KStream<String, String> classroomStream = builder.stream(classroomTopic);   // can't make it to <String, Integer> directly
+        classroomStream.to(outputTopic, Produced.with(Serdes.String(), Serdes.String()));
+
+//        for test only: wired output
+//        KStream<String, String> source = builder.stream(classroomTopic);
+//        source
+//                .flatMapValues(line -> Arrays.asList(line.toLowerCase().split("\\W+")))
+//                .groupBy((key, word) -> word)
+//                //.windowedBy(TimeWindows.of(TimeUnit.SECONDS.toMillis(10)))
+//                .count()
+//                //.filter((word, count) -> (count % 2 == 1))
+//                .toStream()
+//                // convert windowed key to ordinary key
+//                //.map((key, value) -> KeyValue.pair(key.key(), value))
+//                //.map((word, count) -> (count == null ? KeyValue.pair(word, -1L) : KeyValue.pair(word, count)))
+//                .to(outputTopic, Produced.with(Serdes.String(), Serdes.Long()));
 
         KafkaStreams streams = new KafkaStreams(builder.build(), props);
 
