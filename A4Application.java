@@ -59,7 +59,7 @@ public class A4Application {
                 // convert windowed key to ordinary key
                 //.map((key, value) -> KeyValue.pair(key.key(), value))
                 //.map((word, count) -> (count == null ? KeyValue.pair(word, -1L) : KeyValue.pair(word, count)))
-                .to(args[2], Produced.with(Serdes.String(), Serdes.Long()));
+                .to(outputTopic, Produced.with(Serdes.String(), Serdes.Long()));
 
         KafkaStreams streams = new KafkaStreams(builder.build(), props);
 
