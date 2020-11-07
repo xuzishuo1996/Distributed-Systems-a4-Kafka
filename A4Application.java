@@ -46,6 +46,8 @@ public class A4Application {
         // ... = builder.stream(classroomTopic);
         // ...
         // ...to(outputTopic);
+        KStream<String, Integer> classroomStream = builder.stream(classroomTopic);
+        classroomStream.to(outputTopic, Produced.with(Serdes.String(), Serdes.Integer()));
 
         KafkaStreams streams = new KafkaStreams(builder.build(), props);
 
