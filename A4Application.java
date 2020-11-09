@@ -46,8 +46,8 @@ public class A4Application {
         // ...
         // ...to(outputTopic);
 
-        KTable<String, String> studentLocation = builder.table(studentTopic);
-        KTable<String, Long> classroomCapacity = builder.table(classroomTopic, Consumed.with(Serdes.String(), Serdes.Long()));
+        KTable<String, String> studentLocation = builder.table(studentTopic);   // Consumed.with(Serdes.String(), Serdes.String())
+        KTable<String, String> classroomCapacity = builder.table(classroomTopic);
 
         KTable<String, Long> classroomOccupancy = studentLocation
                 .groupBy((student, classroom) ->  KeyValue.pair(classroom, student))
@@ -55,7 +55,7 @@ public class A4Application {
 
         // inner join: some room only exists in occupancy because its capacity is unlimited, ignore it
         KTable<String, String> classroomStatus = classroomOccupancy
-                .join(classroomCapacity, (occupancy, capacity) -> occupancy.toString() + ":" + capacity.toString());
+                .join(classroomCapacity, (occupancy, capacity) -> occupancy.toString() + ":" + capacity);
         // omit the third arg in join():
         // Joined.with(Serdes.String(), Serdes.String(), Serdes.String())  // classroom type, occupancy type, capacity type
 
@@ -88,7 +88,7 @@ public class A4Application {
                 .filter((key, value) -> value != null)
                 .to(outputTopic);
         // Produced with() is same as default in config, could omit
-        //output.to(outputTopic, Produced.with(Serdes.String(), Serdes.String()));
+        // output.to(outputTopic, Produced.with(Serdes.String(), Serdes.String()));
 
         KafkaStreams streams = new KafkaStreams(builder.build(), props);
 
