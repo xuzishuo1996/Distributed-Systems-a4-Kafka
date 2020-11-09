@@ -1,0 +1,49 @@
+test1
+
+./producer_student.sh  ./producer_classroom.sh 
+			>RoomA,2
+
+			>RoomB,2
+>Student100,RoomA
+
+>Student200,RoomA
+
+>Student300,RoomA
+
+>ABC,roomZ
+
+>Student400,RoomA
+
+>Student100,RoomB
+
+>Student200,RoomB
+
+>Student300,RoomB
+			>RoomA,0
+
+			>RoomA,1
+kill (Ctrl + C) ./consumer.sh
+
+>Student1000,RoomA
+
+Right Output
+$ ./consumer.sh 
+RoomA,3
+RoomA,4
+RoomA,3
+RoomA,OK
+RoomB,3
+RoomA,1
+RoomA,OK
+^CProcessed a total of 7 messages
+$ ./consumer.sh 
+RoomA,3
+RoomA,4
+RoomA,3
+RoomA,OK
+RoomB,3
+RoomA,1
+RoomA,OK
+RoomA,2
+^CProcessed a total of 8 messages
+

@@ -46,26 +46,33 @@ public class A4Application {
         // ...
         // ...to(outputTopic);
 
-        KTable<String, String> studentLocation = builder.table(studentTopic);   // Consumed.with(Serdes.String(), Serdes.String())
-        KTable<String, String> classroomCapacity = builder.table(classroomTopic);
+        KStream<String, String> studentStream = builder.stream(studentTopic);   // Consumed.with(Serdes.String(), Serdes.String())
+        KStream<String, String> classroomStream = builder.stream(classroomTopic);
 
+        // key: student, value: classroom
+        KTable<String, String> studentLocation = studentStream.groupByKey().reduce((aggValue, newValue) -> newValue);
+        // key: classroom, value: capacity
+        KTable<String, String> classroomCapacity = classroomStream.groupByKey().reduce((aggValue, newValue) -> newValue);
+
+        // key: classroom, value: occupancy
         KTable<String, Long> classroomOccupancy = studentLocation
                 .groupBy((student, classroom) ->  KeyValue.pair(classroom, student))
                 .count();
 
+        // key: classroom, value: (occupancy:capacity)
         // inner join: some room only exists in occupancy because its capacity is unlimited, ignore it
         KTable<String, String> classroomStatus = classroomOccupancy
                 .join(classroomCapacity, (occupancy, capacity) -> occupancy.toString() + ":" + capacity);
         // omit the third arg in join():
         // Joined.with(Serdes.String(), Serdes.String(), Serdes.String())  // classroom type, occupancy type, capacity type
 
-
+        // key: classroom, value: occupancy or OK (under certain circumstances)
         // value type set to String instead of Long because of "OK"
         KTable<String, String> output = classroomStatus.toStream()  // use toStream() to use groupByKey()
                 .groupByKey()   // key is classroom
                 .aggregate(
                         () -> null, /* initializer */
-                        (aggKey, newValue, oldValue) -> {   /* adder */
+                        (aggKey, newValue, oldValue) -> {
                             String[] data = newValue.split(":");
                             int occupancy = Integer.parseInt(data[0]);
                             int capacity = Integer.parseInt(data[0]);
