@@ -66,7 +66,7 @@ public class A4Application {
                 .aggregate(
                         () -> null, /* initializer */
                         (aggKey, newValue, oldValue) -> {   /* adder */
-                            String[] data = newValue.split(",");
+                            String[] data = newValue.split(":");
                             int occupancy = Integer.parseInt(data[0]);
                             int capacity = Integer.parseInt(data[0]);
                             if (occupancy > capacity) {
