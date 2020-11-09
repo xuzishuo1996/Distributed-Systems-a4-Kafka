@@ -4,18 +4,17 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KTable;
-import org.apache.kafka.streams.kstream.KeyValueMapper;
-import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Produced;
-import org.apache.kafka.streams.kstream.TimeWindows;
+import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.state.KeyValueStore;
 
+import java.nio.charset.IllegalCharsetNameException;
 import java.util.Arrays;
 import java.util.Properties;
 
-
+/* References:
+ * 1. https://kafka.apache.org/24/documentation/streams/core-concepts.html
+ * 2. https://kafka.apache.org/24/documentation/streams/developer-guide/dsl-api.html
+ */
 public class A4Application {
 
     public static void main(String[] args) throws Exception {
@@ -46,22 +45,50 @@ public class A4Application {
         // ... = builder.stream(classroomTopic);
         // ...
         // ...to(outputTopic);
-        KStream<String, String> classroomStream = builder.stream(classroomTopic);   // can't make it to <String, Integer> directly
-        classroomStream.to(outputTopic, Produced.with(Serdes.String(), Serdes.String()));
 
-//        for test only: wired output
-//        KStream<String, String> source = builder.stream(classroomTopic);
-//        source
-//                .flatMapValues(line -> Arrays.asList(line.toLowerCase().split("\\W+")))
-//                .groupBy((key, word) -> word)
-//                //.windowedBy(TimeWindows.of(TimeUnit.SECONDS.toMillis(10)))
-//                .count()
-//                //.filter((word, count) -> (count % 2 == 1))
-//                .toStream()
-//                // convert windowed key to ordinary key
-//                //.map((key, value) -> KeyValue.pair(key.key(), value))
-//                //.map((word, count) -> (count == null ? KeyValue.pair(word, -1L) : KeyValue.pair(word, count)))
-//                .to(outputTopic, Produced.with(Serdes.String(), Serdes.Long()));
+        KTable<String, String> studentLocation = builder.table(studentTopic);
+        KTable<String, Long> classroomCapacity = builder.table(classroomTopic, Consumed.with(Serdes.String(), Serdes.Long()));
+
+        KTable<String, Long> classroomOccupancy = studentLocation
+                .groupBy((student, classroom) ->  KeyValue.pair(classroom, student))
+                .count();
+
+        // inner join: some room only exists in occupancy because its capacity is unlimited, ignore it
+        KTable<String, String> classroomStatus = classroomOccupancy
+                .join(classroomCapacity, (occupancy, capacity) -> occupancy.toString() + ":" + capacity.toString());
+        // omit the third arg in join():
+        // Joined.with(Serdes.String(), Serdes.String(), Serdes.String())  // classroom type, occupancy type, capacity type
+
+
+        // value type set to String instead of Long because of "OK"
+        KTable<String, String> output = classroomStatus.toStream()  // use toStream() to use groupByKey()
+                .groupByKey()   // key is classroom
+                .aggregate(
+                        () -> null, /* initializer */
+                        (aggKey, newValue, oldValue) -> {   /* adder */
+                            String[] data = newValue.split(",");
+                            int occupancy = Integer.parseInt(data[0]);
+                            int capacity = Integer.parseInt(data[0]);
+                            if (occupancy > capacity) {
+                                return String.valueOf(occupancy);
+                            } else {
+                                if (oldValue != null) { // occupancy exceeded capacity previously
+                                    return "OK";
+                                } else {
+                                    return null;
+                                }
+                            }
+                        }
+                );
+        // omit the third arg in aggregate()
+        // Materialized.as("aggregated-stream-store") /* state store name */
+        //              .withValueSerde(Serdes.String()); /* serde for aggregate value */
+
+        output.toStream()
+                .filter((key, value) -> value != null)
+                .to(outputTopic);
+        // Produced with() is same as default in config, could omit
+        //output.to(outputTopic, Produced.with(Serdes.String(), Serdes.String()));
 
         KafkaStreams streams = new KafkaStreams(builder.build(), props);
 
