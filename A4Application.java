@@ -75,7 +75,7 @@ public class A4Application {
                         (aggKey, newValue, oldValue) -> {
                             String[] data = newValue.split(":");
                             int occupancy = Integer.parseInt(data[0]);
-                            int capacity = Integer.parseInt(data[0]);
+                            int capacity = Integer.parseInt(data[1]);
                             if (occupancy > capacity) {
                                 return String.valueOf(occupancy);
                             } else {
