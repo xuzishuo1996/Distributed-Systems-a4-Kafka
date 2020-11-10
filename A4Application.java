@@ -35,24 +35,20 @@ public class A4Application {
         props.put(StreamsConfig.STATE_DIR_CONFIG, stateStoreDir);
         props.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, StreamsConfig.EXACTLY_ONCE);
 
-        // add code here if you need any additional configuration options
-
         StreamsBuilder builder = new StreamsBuilder();
 
-        // add code here
-        //
-        // ... = builder.stream(studentTopic);
-        // ... = builder.stream(classroomTopic);
-        // ...
-        // ...to(outputTopic);
-
-        KStream<String, String> studentStream = builder.stream(studentTopic);   // Consumed.with(Serdes.String(), Serdes.String())
-        KStream<String, String> classroomStream = builder.stream(classroomTopic);
+//        KStream<String, String> studentStream = builder.stream(studentTopic);   // Consumed.with(Serdes.String(), Serdes.String())
+//        KStream<String, String> classroomStream = builder.stream(classroomTopic);
+//
+//        // key: student, value: classroom
+//        KTable<String, String> studentLocation = studentStream.groupByKey().reduce((aggValue, newValue) -> newValue);
+//        // key: classroom, value: capacity
+//        KTable<String, String> classroomCapacity = classroomStream.groupByKey().reduce((aggValue, newValue) -> newValue);
 
         // key: student, value: classroom
-        KTable<String, String> studentLocation = studentStream.groupByKey().reduce((aggValue, newValue) -> newValue);
+        KTable<String, String> studentLocation = builder.table(studentTopic);   // Consumed.with(Serdes.String(), Serdes.String())
         // key: classroom, value: capacity
-        KTable<String, String> classroomCapacity = classroomStream.groupByKey().reduce((aggValue, newValue) -> newValue);
+        KTable<String, String> classroomCapacity = builder.table(classroomTopic);
 
         // key: classroom, value: occupancy
         KTable<String, Long> classroomOccupancy = studentLocation
