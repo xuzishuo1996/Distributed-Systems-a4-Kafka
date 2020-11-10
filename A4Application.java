@@ -79,9 +79,9 @@ public class A4Application {
                             if (occupancy > capacity) {
                                 return String.valueOf(occupancy);
                             } else {
-                                if (oldValue != null) { // occupancy exceeded capacity previously
+                                if (oldValue != null && !oldValue.equals("OK")) { // occupancy exceeded capacity previously
                                     return "OK";
-                                } else {
+                                } else {            // both prev and curr: occupancy <= capacity. not output to outputTopic.
                                     return null;
                                 }
                             }
